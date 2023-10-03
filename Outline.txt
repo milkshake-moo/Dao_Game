@@ -1,0 +1,162 @@
+File storage
+ - sql?
+	- update tables on game completion
+
+ - txt files?
+
+	- Server info
+		- game version
+		- server version
+		- misc info (idk what else we would want)
+
+	- Player info / stats
+		- name
+		- Ip info ? 
+		- pass ?
+		- stats file (which can update)
+		- updated on game completion
+
+	- Game records
+		- updated / created on game completion
+		- players playing the game
+		- List of game moves
+			- way to record a game move
+				- starting piece
+				- destination tile
+		- timestamp of game
+			- start / stop time
+			- duration
+		- result
+			- win
+				- record winning player
+				- record method of win
+			- draw
+
+	- Options table 
+		- Stores various congiruagble constants
+
+
+
+Dao Server
+	- hosting?
+		- TBD
+		- run from github?
+		- run from hosting service?
+		- run from local machine?
+
+	- Host a bunch of dao games
+		- seperate object for each active game
+
+	- be a place for players to see each other
+
+	- Keep track of the game / pass the moves to the other player
+
+	- Keep track of players
+		- see other players online
+		- see games in progress
+			- spectate?
+
+	- Keep track of live games
+
+	- ability to spectate running games
+
+	- Ability to quickly challenge online players that are not in a game
+
+	- can view statistics per player
+		- games won as each color
+		- player vs player stats
+
+	- View named board positons
+		- view stats about board positions
+			- in specific games
+			- server wide
+
+	- Rules page
+		- just says "play dao"
+
+	
+
+
+Play Dao
+	- Game options on game startup
+		- extra draw by repetition rule (optional)
+		- turn off certain win conditions
+		- enable varients?  (wayyyy later)
+
+	- user interface
+		kinda works
+
+	- Check win conditions
+		- count / recognize certain positions
+		- implement draw rule?
+
+	- shouldn't be able to make illegal moves
+
+	- Record result of game
+		- should remember players
+
+	- Game replay?
+
+	- Have a player name 
+		- input
+		- choose from list
+
+	- Concede option
+
+	- Draw option / button
+
+	- Rematch option
+
+	- Dao varients?
+
+
+
+
+
+Where to start / order of operations
+
+	-1.  Figure out logistical stuff
+		- where to host code
+			- git project?
+				- be able to push / pull changes from git
+		- what the heck to start with
+
+
+	0. Inspiration
+		- Look at old programs
+		- Figure out how guis work
+			- Nic?
+		- figure out how connection stuff works
+			- TJ?
+
+	1. Build Python gui
+		- displays a game screen that resembles dao
+
+		- option on startup to host a game vs connect to a game
+		- option to input IP address of host if connecting to another
+		- displays error message if any  
+			- None of above does anything until step 2 is done
+
+	2. Establish a connection over LAN to another instance of the program
+		- program is host or client on startup
+		- connect between two programs 
+		- connect between two programs on seperate computers
+
+	3. Both players can connect, see, and interact with something that vaugely resembles dao
+		- Super basic LAN server to directly connect to another player
+			- hamachi
+			- Done all in python, no HTML, no JS
+		- no extra dao rules that are turned on
+		- both players can interact with stuff
+
+	4. Implement rules and win conditions
+
+	5. Create player profiles
+
+	6. Create records of games
+
+	7. View records of games?
+		- Can parse through a list of moves in a game
+		- displays them in a dao board gui
+		- buttons to go back and forth
+		- maybe text if someone wins
