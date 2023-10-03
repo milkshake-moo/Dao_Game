@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<p id="title">
+A Game of Dao
+</p>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+</style>
+
+</head>
+
+<body onload="startGame()">
+<script>
+
+
+// this function will take care of initializing the display and functionality of the game
+function startGame(){
+	mainGame.start();
+	mainGame.draw();
+	placePieceSound = new sound("PlacePiece.mp3");
+	//mainGame.moveStone(mainGame.whiteStones[0], 0, 1);
+}
+
+// stone object
+// needs x,y board position, color (team), and the game object it belongs to
+function stone(boardx, boardy, color, game){
+	this.boardx = boardx;
+	this.boardy = boardy;
+	this.tileSize = 100;
+	this.x = (this.boardx * this.tileSize) + (this.tileSize/2);
+	this.y = (this.boardy * this.tileSize) + (this.tileSize/2);
+	this.color = color;
+	this.radius = 35;
+	this.context = game.context;
+	// function to draw the stone within the game
+	this.draw = function(){
+		this.context.beginPath();
+		this.context.fillStyle = color;
+		this.context.arc(this.x, this.y, this.radius, 0, 2*Math.PI);
+		this.context.fill();
+	}
+	// function to update the direct position of the stone
+	this.changePos = function (x, y){
+		this.x = x;
+		this.y = y;
+	}
+	// function to update the board position of the stone
+	this.moveTo = function (boardx, boardy){
+		this.boardx = boardx;
+		this.boardy = boardy;
+		this.x = (this.boardx * this.tileSize) + (this.tileSize/2);
+		this.y = (this.boardy * this.tileSize) + (this.tileSize/2);
+	}
+}
+
+
+// the function to create a tile on the board
+// needs the x,y board position, the color, and the game object it belongs to
+function tile(boardx, boardy, color, game){
+	this.boardx = boardx;
+	this.boardy = boardy;
+	this.tileSize = 100;
+	this.x = (boardx * 100) + 5;
+	this.y = (boardy * 100) + 5;
+	this.color = color;
+	this.width = 90;
+	this.height = 90;
+	this.context = game.context;
+	// function to draw the tile within the game
+	this.draw = function (){
+		this.context.fillStyle = this.color;
+		this.context.fillRect(this.x, this.y, this.width, this.height);
+	}
+}
+
+
+
+// this is the function to create a red box that will outline tiles you are legally
+// allowed to move the selected piece to.
+function legalTile(boardx, boardy, color, game){
+	this.boardx = boardx;
+	this.boardy = boardy;
+	this.tileSize = 100;
+	this.x = (boardx * 100) + 5;
+	this.y = (boardy * 100) + 5;
+	this.color = color;
+	this.width = 90;
+	this.height = 90;
+	this.context = game.context;
+	// function to draw the tile within the game
+	this.draw = function (){
+		this.context.beginPath();
+		this.context.lineWidth = 5;
+		this.context.strokeStyle = this.color;
+		this.context.rect(this.x, this.y, this.width, this.height);
+		this.context.stroke();
+	}
+}
+
+
+
+// A function to create a sound object from a file
+function sound(src){
+	this.sound = document.createElement("audio");
+	this.sound.src = src;
+	this.sound.setAttribute("preload", "auto");
+	this.sound.setAttribute("controls", "none");
+	this.sound.style.display = "none";
+	document.body.appendChild(this.sound);
+	this.play = function(){
+		this.sound.play();
+	}
+	this.stop = function(){
+		this.sound.pause();
+	}
+}
+
+
+
+// the main game object
+var mainGame = {
+	// the canvas object that the game uses to display the board and pieces
+	canvas : document.createElement("canvas"),
+	// function to initialize the game
+	
+	start : function(){
+		// build the canvas that will display the board
+		this.canvas.width = 400;
+		this.canvas.height = 400;
+		this.context = this.canvas.getContext("2d");
+		this.canvas.onmousedown = function (){selectStone(event)};
+		this.canvas.onmouseup = function (){deSelectStone(event)};
+		this.canvas.onmousemove = function (){dragStone(event)};
+		document.body.insertBefore(this.canvas, document.body.childNodes[1]);
+		// build game variables
+		this.tempx = null;  // temporary variable
+		this.tempy = null;
+		this.whitePlayer = "Player1";
+		this.blackPlayer = "Player2";
+		this.rect = this.canvas.getBoundingClientRect();  // position of canvas
+		this.selectedStone = null;  // the selected stone object
+		this.selectedOffx = 0;  // offset for x position of selected stone
+		this.selectedOffy = 0;  // offset for y position of selected stone
+		this.hasSelected = 0;  // var to determine if a stone is selected
+		this.winner = null;  // var to store who wins
+		this.wonby = null;  // var to store victory condition
+		this.turn = "white";  // var to store current turn
+		this.whiteStones = [];  // var to store array of white stones
+		this.blackStones = [];  // var to store array of black stones
+		this.legalTiles = [];  // var to store array of legal Tile objects
+		this.tiles = [[],[],[],[]];  // var to store all game tiles
+		this.tiles[0].length = 4;
+		this.tiles[1].length = 4;
+		this.tiles[2].length = 4;
+		this.tiles[3].length = 4;
+		// build the array of board pieces
+		for(i=0; i<4; i=i+1){
+			for(j=0; j<4; j=j+1){
+				if((i+j)%2 == 0){
+					this.tiles[i][j] = new tile(i, j, "#ba653d", this);
+				}else{
+					this.tiles[i][j] = new tile(i, j, "#deaf99", this);
+				}
+			}
+		}
+		// build the array of white stones
+		this.whiteStones[0] = new stone(0, 0, "white", this);
+		this.whiteStones[1] = new stone(1, 1, "white", this);
+		this.whiteStones[2] = new stone(2, 2, "white", this);
+		this.whiteStones[3] = new stone(3, 3, "white", this);
+		// build the array of black stones
+		this.blackStones[0] = new stone(0, 3, "black", this);
+		this.blackStones[1] = new stone(1, 2, "black", this);
+		this.blackStones[2] = new stone(2, 1, "black", this);
+		this.blackStones[3] = new stone(3, 0, "black", this);
+	},
+	
+	// this function will draw all the elements assosiated with the game
+	draw : function(){
+		// clear the board
+		this.context.clearRect(0,0,this.canvas.width, this.canvas.height);
+		// draw the board
+		for(i=0; i<4; i=i+1){
+			for(j=0; j<4; j=j+1){
+				this.tiles[i][j].draw();
+			}
+		}
+		// draw any tiles a selected stone can legally move to
+		for(i=0; i<this.legalTiles.length; i=i+1){
+			this.legalTiles[i].draw();
+		}
+		// draw the stones onto the board
+		for(i=0; i<this.whiteStones.length; i=i+1){
+			this.whiteStones[i].draw();
+		}
+		for(i=0; i<this.blackStones.length; i=i+1){
+			this.blackStones[i].draw();
+		}
+		// draw the selected stone onto the board again so it moves ontop of any other stone
+		if(this.hasSelected == 1){
+			this.selectedStone.draw();
+		}
+	},
+	
+	// this function will increment the turn
+	nextTurn : function(){
+		if(this.turn == "white"){
+			this.turn = "black";
+		}else{
+			this.turn = "white";
+		}
+		document.getElementById("turn").innerHTML = "It is " + this.turn + "'s turn!";
+	},
+	
+	// this function attempts to move a stone to a specific tile
+	moveStone : function(stone, boardx, boardy){
+		// check to see if it is this players turn
+		if(stone.color != this.turn){
+			document.getElementById("gameText").innerHTML = "It is not your turn!";
+			stone.moveTo(stone.boardx, stone.boardy);
+			this.legalTiles = [];
+		}else{
+			// check legality of the movement
+			for(i=0; i<this.legalTiles.length; i=i+1){
+				if((this.legalTiles[i].boardx == boardx) && (this.legalTiles[i].boardy == boardy)){
+					stone.moveTo(boardx, boardy);
+					this.nextTurn();
+					this.legalTiles = [];
+					document.getElementById("gameText").innerHTML = this.whitePlayer + " vs " + this.blackPlayer + "!";
+					break;
+				}
+			}
+			// if we get here, then it was not a legal move
+			if(this.legalTiles.length != 0){
+				stone.moveTo(stone.boardx, stone.boardy);
+				this.legalTiles = [];
+				document.getElementById("gameText").innerHTML = "That is not a legal move!";
+			}
+		}
+	},
+	
+	// this function will create fill the array of legal tiles for a selected stone
+	findLegalMove : function(){
+		// check all 8 directions a stone can move in
+		// add a new legal tile to the array wherever a stone can legally move
+		stone = this.selectedStone;
+		this.checkDirect(stone, -1, -1);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, 0, -1);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, 1, -1);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, 1, 0);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, 1, 1);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, 0, 1);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, -1, 1);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+		this.checkDirect(stone, -1, 0);
+		if(this.tempx != null){
+			this.legalTiles[this.legalTiles.length] = new legalTile(this.tempx, this.tempy, "red", this);
+		}
+	},
+	
+	// this function will check in a direction to see if a stone can move in that way
+	checkDirect(stone, xdir, ydir){
+		// xdir is the change in x position we're moving
+		// ydir is the change in y position we're moving
+		x = stone.boardx + xdir;
+		y = stone.boardy + ydir;
+		free = 1;
+		lastFreex = null;
+		lastFreey = null;
+		// ensure next pos remains in bounds of the board
+		while((x>=0) && (x<=3) && (y>=0) && (y<=3)){
+			// see if there is already a stone at the location
+			for(i=0; i<this.whiteStones.length; i=i+1){
+				if((this.whiteStones[i].boardx == x) && (this.whiteStones[i].boardy == y)){
+					free = 0;
+					break;
+				}
+			}
+			for(i=0; i<this.blackStones.length; i=i+1){
+				if((this.blackStones[i].boardx == x) && (this.blackStones[i].boardy == y)){
+					free = 0;
+					break;
+				}
+			}
+			// if there was no stone, update the last free location
+			if(free == 0){
+				break
+			}
+			// if there was a stone, break the loop
+			else{
+				lastFreex = x;
+				lastFreey = y;
+			}
+			x = x + xdir;
+			y = y + ydir;
+		}
+		// save the last free positions to the temporary variables
+		this.tempx = lastFreex;
+		this.tempy = lastFreey;
+	}
+}
+
+
+
+
+
+
+
+// functions to run on mouse actions
+
+
+// function to run on mouse click
+function selectStone(e){
+	x = e.clientX - mainGame.rect.left;
+	y = e.clientY - mainGame.rect.top;
+	// determine if the cursor is ontop of a stone
+	for(i=0; i<mainGame.whiteStones.length; i=i+1){
+		// check white stone
+		sx = mainGame.whiteStones[i].x;
+		sy = mainGame.whiteStones[i].y;
+		if(Math.sqrt((sx-x)*(sx-x) + (sy-y)*(sy-y)) < mainGame.whiteStones[i].radius){
+			mainGame.hasSelected = 1;
+			mainGame.selectedStone = mainGame.whiteStones[i];
+			mainGame.selectedOffx = x - sx;
+			mainGame.selectedOffy = y - sy;
+			document.getElementById("test").innerHTML = "before";
+			mainGame.findLegalMove();
+			break;
+		}
+		//check black stone
+		sx = mainGame.blackStones[i].x;
+		sy = mainGame.blackStones[i].y;
+		if(Math.sqrt((sx-x)*(sx-x) + (sy-y)*(sy-y)) < mainGame.blackStones[i].radius){
+			mainGame.hasSelected = 1;
+			mainGame.selectedStone = mainGame.blackStones[i];
+			mainGame.selectedOffx = x - sx;
+			mainGame.selectedOffy = y - sy;
+			mainGame.findLegalMove();
+			break;
+		}
+	}
+
+}
+
+
+
+// function to run on mouse release
+function deSelectStone(e){
+	if(mainGame.hasSelected == 1){
+		x = e.clientX - mainGame.rect.left;
+		y = e.clientY - mainGame.rect.top;
+		boardx = Math.floor(x / 100);
+		boardy = Math.floor(y / 100);
+		document.getElementById("test").innerHTML = boardx + ", " + boardy;
+		// move the selected stone
+		mainGame.moveStone(mainGame.selectedStone, boardx, boardy);
+		placePieceSound.play();
+		// deselect the stone
+		mainGame.hasSelected = 0;
+		mainGame.selectedStone = null;
+		mainGame.draw();
+	}
+}
+
+
+
+// function to run on mouse movement
+function dragStone(e){
+	// check for selected stone
+	x = e.clientX - mainGame.rect.left;
+	y = e.clientY - mainGame.rect.top;
+	if(mainGame.hasSelected == 1){
+		mainGame.selectedStone.changePos((x-mainGame.selectedOffx), (y-mainGame.selectedOffy));
+		mainGame.draw();
+	}
+	// redraw everything in the game object
+	xy = "Coordinates: " + x + ", " + y;
+	document.getElementById("coords").innerHTML = xy;
+}
+
+
+
+
+
+</script>
+
+<p id="turn"></p>
+<p id="gameText">Player1 vs Player2!</p>
+<button onclick="resetGame()">Reset Game</button>
+<button onclick="offerDraw()">Offer Draw</button>
+<p id="test"></p>
+<p id="coords"></p>
+
+
+</body>
+
+</html>
+
+
+
+
+
+

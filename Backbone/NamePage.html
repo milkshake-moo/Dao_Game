@@ -1,0 +1,45 @@
+<html>
+<head>
+
+<title>Tempoary Page:</title>
+</head>
+
+
+<body>
+<p>Hello World!</p>
+<p>This will be where you can choose a name at some point</p>
+
+<form name="nameForm" action="NamePage/update" method="post">
+	<label for="nameField">Enter Your Username:</label><br>
+	<input id="nameField" type="text" name="user"><br>
+	<label for="testField">Enter a second value for testing:</label><br>
+	<input id="testField" type="text" name="test"><br><br>
+	<input id="nameButton" type="submit" value="Submit">
+</form>
+
+
+<script>
+
+function submitName(){
+	// format the post request
+	var http = new XMLHttpRequest();
+	var url = "NamePage/update";
+	var params = "userName=SpamAndEggs";
+	http.open('POST', url, true);
+	
+	// send the proper header info
+	http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+	
+	//function when the state changes
+	http.onreadystatechange = function() {
+		if(http.readyState == 4 && http.status == 200){
+			alert(http.responseText);
+		}
+	}
+	http.send(params);
+}
+
+</script>
+
+</body>
+</html>
