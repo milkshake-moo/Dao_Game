@@ -44,7 +44,7 @@ CREATE TABLE [game].[win_positions] (
     win_positon_desc varchar(50)
 );
         INSERT INTO [game].[win_positions] (winning_position_id, win_positon_desc)
-        VALUES ( (1, "Line"), (2, "Square"), (4, "4 Corners"), (13, "Smothered"), (666, "Concede") );
+        VALUES ( (1, "Line"), (2, "Square"), (4, "4 Corners"), (13, "Smothered"), (50, "Draw"), (666, "Concede") );
 
 /* Create dimensions for player data */
 USE DAOdb;
