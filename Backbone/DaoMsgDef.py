@@ -85,7 +85,6 @@ class StandardDaoMsg():
     def __init__(self):
         self.msg_code = DaoMsgCode_e.invalid
         self.payload_length = 0
-        self.header_length = 8  # This value should remain constant
         self.header = None
         self.payload = None
 
@@ -130,7 +129,7 @@ class StandardDaoMsg():
     # populate the fields of the message object from a raw string of bytes
     def buildFromBytes(self, raw_bytes):
         # split the raw bytes into the header and any payload
-        header_bytes, payload_bytes = splitBytes(raw_bytes, self.header_length)
+        header_bytes, payload_bytes = splitBytes(raw_bytes, HEADER_LENGTH)
         # save the payload 
         self.payload = payload_bytes
         # extract and save the header bytes
