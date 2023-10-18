@@ -1,0 +1,279 @@
+
+This is a text file for loosely jotting down the flow of a dao game.  This should not
+be treated as an absoulte source of truth, it's more like a rough brainstorming thing
+
+This was created mostly to help TJ figure out what information the Dao programs need to
+exchange back and forth
+
+
+
+NOTE:  This may be missing cirtical behavior, feel free to add / change things going forward
+
+
+
+
+
+
+
+In all states of the game, the user should be able to exit the program.
+
+
+==== DAO PROGRAMS ARE DISCONNECTED ====
+
+- SERVER
+    - The server should be awaiting incomming socket connections
+    - The user should be able to:
+        - see IP information of self.  User can give to client user
+        - input their player name
+
+
+- CLIENT
+    - no background client behavior
+    - The user should be able to:
+        - fill in a prompt with Server IP information
+        - input their player name
+
+
+
+
+
+
+===== DAO PROGRAMS ARE CONNECTED =====
+
+- SERVER
+    - The server should be checking for incomming messages from the client
+    - The user should be able to:
+        - kick the connected client
+        - challenge the connected client to a game
+        - Accept a challenge from the client
+        - Reject a challenge from the client
+
+
+- CLIENT
+    - The client should be checking for incomming messages from the server
+    - The user should be able to:
+        - disconnect from the server
+        - challenge the connected server to a game
+        - accept a challenge from the server
+        - Reject a challenge from the server
+
+
+
+
+
+==================  DURING A DAO GAME  ======================
+
+- SERVER
+    - The server should be checking for incomming messages from the client
+    - The server will maintain the master copy of the game state
+    - The user should be able to:
+        - Make a legal move
+        - Win or lose the game
+        - Offer a draw
+        - accept a draw
+        - resign
+    
+
+- CLIENT
+    - The client should be checking for incomming messages from the server
+    - The client will maintain a copy of the game state but defer to the servers copy
+    - The user should be able to:
+        - Make a legal move
+        - Win or lose the game
+        - offer a draw
+        - accept a draw
+        - resign
+
+
+
+
+
+
+
+==========================  AT THE END OF A DAO GAME  ============================
+
+
+- SERVER
+    - The server should be checking for incomming messages from the client
+    - The server will maintain a copy of the game that just finished
+    - The user should be able to:
+        - Save the Dao game (for future replay stuff!)
+        - challenge the other player to a rematch
+        - accept a rematch
+        - decline a rematch
+        - disconnect / kick the connected client
+    
+
+- CLIENT
+    - The client should be checking for incomming messages from the server
+    - The client will maintain a copy of the game that just finished
+    - The user should be able to:
+        - Save the Dao game (for future replay stuff!)
+        - challenge the other player to a rematch
+        - accept a rematch
+        - decline a rematch
+        - disconnect from the server
+
+
+
+
+
+
+
+
+*************************  STATE CHANGES  **************************
+
+- Disconnected dao programs:
+    - Dao programs can become connected
+
+- Connected Dao programs:
+    - Dao programs can become Disconnected
+    - Dao programs can start a game
+
+- During a Dao game:
+    - Dao programs can become Disconnected
+    - Dao programs can conclude
+
+- After a Dao game:
+    - Dao programs can become Disconnected
+    - Dao programs can start another game
+
+
+
+
+
+
+
+*********************  BRAINSTORMING  ******************************
+
+- Challenging a player to a game is functionally the same as a rematch
+    - These can use the same msg_codes
+
+- Acceptiong or declining a challenge is functionally the same as accepting or declining a rematch
+    - These can use the same msg_codes
+
+
+- End of game (EOG) behavior:
+    - Server should be the only one to send EOG messages.
+    - Client only declares EOG if connection is lost to the server
+        - The client should still be able to detect if someone wins
+        - The client should be able to display GUI for victory based on it's internal state
+            - This should get updated when an EOG message is received to ensure correctness
+
+
+- Player move behavior:
+    - This should always be checked locally for legality
+    - Local Dao game state should be updated
+    - Client should send the move info to the server
+    - Server should send the move info to the client
+    - If the client/server makes a move that would result in end of the game:
+        - Server should send move info to client, then end of game info to the client
+        - Client should send move info to the server, then expect end of game info from the server
+    - A hash of the state / value of everything in the Dao game could be used for error checking
+        - if hashes were different, client and server know that they have mismatching game states
+        - on a mismatch, client could receive a fresh game state from the server's master copy
+        - This may not be needed
+
+
+- Resign behavior:
+    - Client should send resignation to server.  Client should expect and EOG from the server
+    - Server should just send an EOG to the client
+
+
+- Draw behavior:
+    - Client requests draw from server, receives an EOG instead of an accepted message from the server
+        - Client receives a draw response if the server declines
+    - Server requests draw from client, always receives an accept/rejected message fromthe client 
+        - Server will follow up with an EOG message to the client if the draw was accepted
+
+
+
+
+******************  MESSAGES NEEDED TO COMMUNICATE DAO THINGS  *********************
+
+- Challenge/rematch the connected user to a game
+    - direction:
+        server <-> client
+    - payload:
+        self name
+        self piece color
+
+
+- Respond to a challenge/rematch from a connected user
+    - direction:
+        server <-> client
+    - payload:
+        self name
+        accepted or declined
+
+
+- Send Legal move
+    - direction:
+        server <-> client
+    - payload:
+        Dao piece that moved
+        new location of piece
+        hash of game state???
+            - a hash of all piece positions,turn count, player turn, etc. could be used to ensure the server and client have the same state stored
+            - this may not be needed
+                
+
+- Resign
+    - direction:
+        server <-  client
+    - payload:
+        NA
+
+- Request a draw
+    - direction
+        server <-> client
+    - payload:
+        NA
+
+
+- Respond to a draw request
+    - direction
+        server <-> client
+    - payload
+        accepted or declined
+
+ 
+- End of Game (EOG) message:
+    - direction:
+        server  -> client
+    - payload:
+        reason for game end (win, draw, resign)
+        winning player name (if applicible)
+        method of victory (if appliciale)
+
+
+
+
+
+****************************  POTENTIAL ADDITIONAL FUTURE MESSAGES  **************************************
+
+
+
+
+- request game state
+    - direction
+        server <-  client
+    -payload:
+        NA
+
+
+- Send game state
+    -direction
+        server  -> client
+    -payload:
+        current board positions of all pieces
+        current player turn
+        turn count
+        legal move history
+        in progress vs complete
+            - potential for winner / draw / method of win too
+
+
+
+
+
