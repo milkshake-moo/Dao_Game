@@ -112,10 +112,13 @@ class DaoPlayer():
 class DaoGameLog():
     """
     This class stores information about a dao game for future review
+    TODO:  Implement conversion to and from an array of bytes
+    TODO:  Implement Restoring / running a game object using a log (without a result)
+    TODO:  Implement saving a log to a file and loading a log from a file
     """
     # This identifies the format and info the game log uses from potential (but unlikely) future versions
     DAOGAMELOG_VERSION = 1
-    # This delimiter will seperate log entries in byte form so they can be parsed later
+    # This delimiter will seperate certain parts of log entries in byte form so they can be parsed later
     DAOGAMELOG_DELIMITER = '*.'
 
     # initialization function for a DaoGameLog
@@ -232,6 +235,17 @@ class DaoGameObject():
                 self.game_log.log_event(DaoGameEventCode_e.player_0_offer_draw)
             else:
                 self.game_log.log_event(DaoGameEventCode_e.player_1_offer_draw)
+
+
+    # function to handle conceeding a game
+    def conceede_game(self, player : DaoPlayer):
+        # the player in the arguments is conceeding the game
+        self.game_over = True
+        # record that the other player won the game because of the concession
+        if player == self.player_0:
+            self.game_log.log_result(DaoGameEventCode_e.player_1_win, DaoGameEventCode_e.conceede)
+        else:
+            self.game_log.log_result(DaoGameEventCode_e.player_0_win, DaoGameEventCode_e.conceede)
 
 
     # function to abruptly end the game without declaring a winner
