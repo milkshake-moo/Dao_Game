@@ -342,7 +342,7 @@ class DaoTransport():
         return accepted_status
 
 
-    # TODO:  Add more helpful send functions for certain types of msg_codes? 
+    # TODO:  Add more helpful send functions for certain types of msg_codes?   
     #        It might be better to handle this outside of this class and more modularly
 
 

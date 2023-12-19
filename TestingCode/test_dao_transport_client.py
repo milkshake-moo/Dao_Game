@@ -21,10 +21,12 @@ from Backbone.DaoTransport import DaoTransport
 
 # constants and common variables
 ip = "localhost"
+ip = '127.0.0.1'
 server_port = 8082
 client_port = 8081
 wait_time_seconds = 60
 
+#TODO:  Test this for connecting from different computers
 
 
 
