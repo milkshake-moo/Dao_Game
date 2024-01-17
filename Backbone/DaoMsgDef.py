@@ -314,16 +314,24 @@ def build_resign_msg():
 
 
 # This function creates a StandardDaoMsg using the legal_move msg
-def build_legal_move_msg(dao_piece : tempData, new_position : tempData):
+def build_legal_move_msg(dao_piece : str, new_position : tuple):
     """
     This creates a legal_move Dao message.
-    - dao_piece:    An identifier to know what piece is moving
-    - new_position: The board position to move the piece to
+    - dao_piece:    An identifier to know what piece is moving (3 bytes)
+    - new_position: The board position to move the piece to (tuple, two integers)
     """
     msg = StandardDaoMsg()
-    piece_bytes = dao_piece.getBytes()
-    posit_bytes = combineBytes(PAYLOAD_DELIMITER, new_position.getBytes())
+    # get the byte equivelant for each part of the message
+    piece_bytes = dao_piece.encode()
+    new_position_x, new_position_y = new_position
+    posit_x_bytes = new_position_x.to_bytes(1)
+    posit_y_bytes = new_position_y.to_bytes(1)
+    # combine the position bytes into a single byte array
+    posit_bytes = combineBytes(PAYLOAD_DELIMITER, posit_x_bytes)
+    posit_bytes = combineBytes(posit_bytes, posit_y_bytes)
+    # combine the piece identifier bytes and the position bytes (will be seperated by PAYLOAD_DELIMITER)
     payload = combineBytes(piece_bytes, posit_bytes)
+    # use the full byte array as the payload for this message
     msg.configMsg(DaoMsgCode_e.legal_move, payload)
     return msg
 
@@ -402,15 +410,16 @@ def extract_draw_response_msg(msg : StandardDaoMsg):
 def extract_legal_move_msg(msg : StandardDaoMsg):
     """
     This extracts data from a legal_move Dao message.
-    - dao_piece:    An identifier to know what piece is moving
-    - new_position: The board position to move the piece to
+    - dao_piece:    An identifier to know what piece is moving (3 byte string)
+    - new_position: The board position to move the piece to (2 int tuple)
     """
     # get the bytes for each variable in the payload
     piece_bytes, posit_bytes = splitBytesOnDelimiter(msg.payload)
     # convert the bytes back into useable variables / structures
-    # TODO: implement the reverse byte conversion once no longer using tempData structures
-    dao_piece = tempData()
-    new_position = tempData()
+    dao_piece = piece_bytes.decode()
+    posit_x = int(posit_bytes[0])
+    posit_y = int(posit_bytes[1])
+    new_position = posit_x, posit_y
     return dao_piece, new_position
 
 
@@ -445,24 +454,24 @@ def extract_end_of_game_mgs(msg : StandardDaoMsg):
 
 def main():
     # testing building a StandDaoMsg with a function and getting the bytes
-    data1 = tempData()
-    data2 = tempData()
-    test = build_legal_move_msg(data1, data2)
-    test_bytes = test.getBytes()
-    test2 = StandardDaoMsg()
+    #data1 = tempData()
+    #data2 = tempData()
+    #test = build_legal_move_msg(data1, data2)
+    #test_bytes = test.getBytes()
+    #test2 = StandardDaoMsg()
 
     # testing that we can convert the bytes from the first msg into a new msg structure
-    test2.buildFromBytes(test_bytes)
-    print("initial bytes")
-    print(test_bytes)
-    print("new msg structure bytes")
+    #test2.buildFromBytes(test_bytes)
+    #print("initial bytes")
+    #print(test_bytes)
+    #print("new msg structure bytes")
     # test2's bytes should match the initial test_bytes perfectly
-    print(test2.getBytes())
+    #print(test2.getBytes())
     # all of the below should match data related to the legal_move function
-    print(test2.msg_code)
-    print(test2.payload_length)
-    print(test2.payload)
-    print()
+    #print(test2.msg_code)
+    #print(test2.payload_length)
+    #print(test2.payload)
+    #print()
 
     # Testing a different message function with a boolean and string input
     print("TESTING CHALLENGE RSP MESSAGE")
@@ -479,6 +488,23 @@ def main():
     rsp_msg.buildFromBytes(test3.getBytes())
     name, accepted = extract_challenge_response_msg(rsp_msg)
     print(name, accepted)
+    print()
+
+    # Testing the leagl move function
+    print("TESTING LEGAL MOVE FUNCTION")
+    piece_id = "0_1"
+    new_move = 1,2
+    test4 = build_legal_move_msg(piece_id, new_move)
+    test4_bytes = test4.getBytes()
+    print(test4_bytes)
+    print()
+
+    # Testing extracting the above data using the msg extractor
+    print("TESTING EXTRACT LEGAL MOVE FUNCTION")
+    rsp_msg = StandardDaoMsg()
+    rsp_msg.buildFromBytes(test4.getBytes())
+    piece_id, new_move = extract_legal_move_msg(rsp_msg)
+    print(piece_id, new_move)
     print()
 
     # Testing helper functions that help create or extract information from byte arrays
