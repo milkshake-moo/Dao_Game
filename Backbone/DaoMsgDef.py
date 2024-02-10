@@ -265,7 +265,7 @@ def build_challenge_to_game_msg(player_name : str, player_color : str):
     
 
 # This function creates a StandardDaoMsg using the challenge_response msg
-def build_challenge_response_msg(player_name : str, accepted_status : bool):
+def build_challenge_response_msg(player_name : str, player_color : str, accepted_status : bool):
     """
     This creates a challenge_response Dao message.
         - player_name:      The name of the player responding to a challenge
@@ -273,8 +273,11 @@ def build_challenge_response_msg(player_name : str, accepted_status : bool):
     """
     msg = StandardDaoMsg()
     name_bytes = player_name.encode()
+    color_bytes = player_color.encode()
+    name_bytes = combineBytes(name_bytes, PAYLOAD_DELIMITER)
+    player_bytes = combineBytes(name_bytes, color_bytes)
     accepted_btyes = combineBytes(PAYLOAD_DELIMITER, accepted_status.to_bytes(1))
-    payload = combineBytes(name_bytes, accepted_btyes)
+    payload = combineBytes(player_bytes, accepted_btyes)
     msg.configMsg(DaoMsgCode_e.challenge_response, payload)
     return msg
 
@@ -388,11 +391,13 @@ def extract_challenge_response_msg(msg : StandardDaoMsg):
         - accepted_status:  True if the player is accepting the challenge, false if rejecting
     """
     # get the bytes for each variable in the payload
-    name_bytes, accepted_btyes = splitBytesOnDelimiter(msg.payload)
+    name_bytes, remaining_btyes = splitBytesOnDelimiter(msg.payload)
+    color_bytes, accepted_bytes = splitBytesOnDelimiter(remaining_btyes)
     # convert the bytes back into useable variables / structures
     player_name = name_bytes.decode()
-    accepted_status = bool.from_bytes(accepted_btyes)
-    return player_name, accepted_status
+    player_color = color_bytes.decode()
+    accepted_status = bool.from_bytes(accepted_bytes)
+    return player_name, player_color, accepted_status
 
 
 # This function extracts payload data for the draw_response msg

@@ -317,11 +317,11 @@ class DaoTransport():
         rsp = self.send_msg_and_get_response(msg, timeout)
         # extract the data from the response
         if rsp != None and rsp.msg_code == DaoMsg.DaoMsgCode_e.challenge_response:
-            remote_player_name, accepted_status = DaoMsg.extract_challenge_response_msg(rsp)
+            remote_player_name, remote_player_color, accepted_status = DaoMsg.extract_challenge_response_msg(rsp)
         else:
             # TODO:  Throw an error here if no response / wrong msg_code was received?
             pass 
-        return remote_player_name, accepted_status
+        return remote_player_name, remote_player_color, accepted_status
 
 
     # BLOCKING This function will send a draw request and await the response
